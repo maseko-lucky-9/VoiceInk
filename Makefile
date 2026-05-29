@@ -63,6 +63,7 @@ local: check setup
 		-xcconfig LocalBuild.xcconfig \
 		CODE_SIGN_IDENTITY="$$SIGN_ID" \
 		CODE_SIGN_STYLE=Manual \
+		ENABLE_HARDENED_RUNTIME=NO \
 		CODE_SIGNING_REQUIRED=NO \
 		CODE_SIGNING_ALLOWED=YES \
 		DEVELOPMENT_TEAM="" \
