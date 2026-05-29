@@ -2,8 +2,11 @@
 // Build configuration for local/unsigned builds (no Apple Developer certificate required).
 // Used by `make local` — does NOT affect Debug or Release configurations.
 
-// Ad-hoc signing (works without a developer account)
-CODE_SIGN_IDENTITY = -
+// Signing identity is set on the `make local` command line (CODE_SIGN_IDENTITY),
+// NOT here. The Makefile detects the stable "VoiceInk Local Signing" cert and uses
+// it (so TCC grants persist across rebuilds), falling back to ad-hoc "-" if absent.
+// Do NOT hardcode CODE_SIGN_IDENTITY here — an xcconfig value overrides the
+// command-line override for code-signing settings and silently forces ad-hoc.
 CODE_SIGN_STYLE = Manual
 DEVELOPMENT_TEAM =
 PROVISIONING_PROFILE_SPECIFIER =
