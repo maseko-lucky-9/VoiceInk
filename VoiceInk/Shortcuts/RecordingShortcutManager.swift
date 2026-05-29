@@ -48,6 +48,7 @@ class RecordingShortcutManager: ObservableObject {
     private let powerModeShortcutManager: PowerModeShortcutManager
     private let shortcutMonitor = ShortcutMonitor()
     private var shortcutChangeObserver: NSObjectProtocol?
+    private var appActiveObserver: NSObjectProtocol?
     private let shortcutModeHandler: RecordingShortcutModeHandler
     private let primaryRecordingShortcutModeSource: RecordingShortcutModeSource
 
@@ -158,6 +159,22 @@ class RecordingShortcutManager: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor in
                 self?.refreshShortcutMonitoring()
+            }
+        }
+
+        // Retry the global-hotkey event tap when the app becomes active. The tap
+        // requires Accessibility + Input Monitoring; if either was missing at launch,
+        // installEventTap() failed silently and would otherwise never retry until the
+        // next relaunch. Re-attempt only when the tap is not already running so an
+        // active recording is never torn down.
+        appActiveObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                guard let self, !self.shortcutMonitor.isRunning else { return }
+                self.refreshShortcutMonitoring()
             }
         }
 
@@ -325,6 +342,9 @@ class RecordingShortcutManager: ObservableObject {
     deinit {
         if let shortcutChangeObserver {
             NotificationCenter.default.removeObserver(shortcutChangeObserver)
+        }
+        if let appActiveObserver {
+            NotificationCenter.default.removeObserver(appActiveObserver)
         }
 
         MainActor.assumeIsolated {
