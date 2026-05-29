@@ -24,6 +24,11 @@ final class ShortcutMonitor {
     private var eventTap: CFMachPort?
     private var eventTapRunLoopSource: CFRunLoopSource?
 
+    /// True when a CGEvent tap is currently installed. A failed install (missing
+    /// Accessibility / Input Monitoring) leaves this false, so callers can retry
+    /// once permissions are granted.
+    var isRunning: Bool { eventTap != nil }
+
     private static var hasRequestedListenEventAccess = false
     private static let shortcutInterruptionWindow: TimeInterval = 1.0
 

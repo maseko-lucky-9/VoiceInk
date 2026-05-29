@@ -48,10 +48,22 @@ build: setup
 local: check setup
 	@echo "Building VoiceInk for local use (no Apple Developer certificate required)..."
 	@rm -rf "$(LOCAL_DERIVED_DATA)"
+	@SIGN_ID="$$(security find-identity -v -p codesigning 2>/dev/null | grep -o 'VoiceInk Local Signing' | head -1)"; \
+	if [ -n "$$SIGN_ID" ]; then \
+		echo "Signing with stable identity: $$SIGN_ID"; \
+		echo "  -> TCC grants (Accessibility / Input Monitoring) persist across rebuilds."; \
+	else \
+		SIGN_ID="-"; \
+		echo "WARN: 'VoiceInk Local Signing' cert not found - falling back to ad-hoc signing."; \
+		echo "      Accessibility / Input Monitoring grants will RESET on every rebuild."; \
+		echo "      Create the stable cert with: ./scripts/create-local-signing-cert.sh"; \
+	fi; \
 	xcodebuild -project VoiceInk.xcodeproj -scheme VoiceInk -configuration Debug \
 		-derivedDataPath "$(LOCAL_DERIVED_DATA)" \
 		-xcconfig LocalBuild.xcconfig \
-		CODE_SIGN_IDENTITY="-" \
+		CODE_SIGN_IDENTITY="$$SIGN_ID" \
+		CODE_SIGN_STYLE=Manual \
+		ENABLE_HARDENED_RUNTIME=NO \
 		CODE_SIGNING_REQUIRED=NO \
 		CODE_SIGNING_ALLOWED=YES \
 		DEVELOPMENT_TEAM="" \

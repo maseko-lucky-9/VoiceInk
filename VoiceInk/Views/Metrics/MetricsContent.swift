@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import Foundation
 import os
+import ApplicationServices
 
 private struct DashboardMetricsSummary: Equatable, Sendable {
     var totalCount: Int = 0
@@ -71,7 +72,6 @@ private enum DashboardMetricsLoader {
 struct MetricsContent: View {
     private let logger = Logger(subsystem: "com.prakashjoshipax.voiceink", category: "MetricsContent")
     let modelContext: ModelContext
-    let licenseState: LicenseViewModel.LicenseState
 
     @State private var totalCount: Int = 0
     @State private var totalWords: Int = 0
@@ -81,9 +81,8 @@ struct MetricsContent: View {
     @State private var isModelStatsPanelPresented = false
     @State private var isAccessibilityEnabled = AXIsProcessTrusted()
 
-    init(modelContext: ModelContext, licenseState: LicenseViewModel.LicenseState) {
+    init(modelContext: ModelContext) {
         self.modelContext = modelContext
-        self.licenseState = licenseState
 
         let cachedSummary = DashboardMetricsCache.shared.currentSummary()
         _totalCount = State(initialValue: cachedSummary?.totalCount ?? 0)
@@ -106,10 +105,7 @@ struct MetricsContent: View {
 
                             heroSection
                             metricsSection
-                            HStack(alignment: .top, spacing: 18) {
-                                HelpAndResourcesSection()
-                                DashboardPromotionsSection(licenseState: licenseState)
-                            }
+                            HelpAndResourcesSection()
 
                             Spacer(minLength: 20)
 
@@ -174,7 +170,7 @@ struct MetricsContent: View {
         PermissionCard(
             icon: "hand.raised",
             title: "Accessibility Access",
-            description: "VoiceInk needs Accessibility permission to work reliably across your entire Mac",
+            description: "VoiceInk needs Accessibility permission to work reliably across your entire Mac. If VoiceInk is already in the list but enabling the toggle has no effect, the entry is pinned to a previous build's signature — remove VoiceInk from the list with the − button and re-add this build.",
             isGranted: isAccessibilityEnabled,
             buttonTitle: "Open System Settings",
             buttonAction: openAccessibilitySettings,
@@ -188,6 +184,17 @@ struct MetricsContent: View {
     }
 
     private func openAccessibilitySettings() {
+        // Force macOS to re-evaluate TCC for the current code-signature.
+        // For ad-hoc-signed local builds, each rebuild changes the cdhash; the existing
+        // TCC entry is pinned to a stale cdhash so toggling the entry in System Settings
+        // has no effect. Prompting here gives macOS a fresh chance to add a current entry
+        // — though if a stale entry already exists, the system will suppress the dialog
+        // and the user still needs to remove + re-add (description copy explains).
+        let options: NSDictionary = [
+            kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true
+        ]
+        _ = AXIsProcessTrustedWithOptions(options)
+
         if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
             NSWorkspace.shared.open(url)
         }
