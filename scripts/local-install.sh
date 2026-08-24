@@ -118,7 +118,7 @@ printf 'version:      %s\n' "$(plutil -extract CFBundleShortVersionString raw "$
 printf 'sparkle keys: %s (want 0)\n' "$(plutil -p "$info" | grep -c '"SU' || true)"
 printf 'LSUIElement:  %s (want false)\n' "$(plutil -extract LSUIElement raw "$info" 2>/dev/null || echo MISSING)"
 if codesign --verify --deep --strict "$DEST" 2>/dev/null; then
-  printf 'signature:    ok (%s)\n' "$(codesign -dv "$DEST" 2>&1 | grep -o 'adhoc' || echo signed)"
+  printf 'signature:    ok (%s)\n' "$(codesign -dv "$DEST" 2>&1 | grep -o 'adhoc' | head -1 || echo signed)"
 else
   printf 'signature:    \033[31mFAILED\033[0m\n'
 fi
