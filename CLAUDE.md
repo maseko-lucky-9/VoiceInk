@@ -83,6 +83,10 @@ executed as a true `@Attribute(originalName:)` rename.
 
 Rules worth not relearning:
 
+- There are three stores and all three carry the *same* schema, but each populates only its
+  own table: transcriptions in `default.store`, session metrics in `stats.store`, dictionary in
+  `dictionary.store`. `select count(*) from ZSESSIONMETRIC` against `default.store` returns a
+  perfectly truthful-looking `0`. Check the right store before concluding data was lost.
 - Quit from the menu bar, never SIGKILL. Recent history lives only in the `-wal` sidecars
   until a clean quit checkpoints it. Copy `.store`, `-wal` and `-shm` as a set.
 - `ditto` has **no** `--exclude` flag. Use `cp -c` / `cp -Rc` (APFS clones, instant and free).

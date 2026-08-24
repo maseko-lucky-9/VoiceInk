@@ -122,9 +122,14 @@ if codesign --verify --deep --strict "$DEST" 2>/dev/null; then
 else
   printf 'signature:    \033[31mFAILED\033[0m\n'
 fi
-if [[ -f "$SUPPORT/default.store" ]] && command -v sqlite3 >/dev/null; then
-  printf 'transcripts:  %s\n' \
-    "$(sqlite3 -readonly "$SUPPORT/default.store" 'select count(*) from ZTRANSCRIPTION;' 2>/dev/null || echo 'n/a')"
+# All three stores carry the same schema, but each populates only its own table:
+# transcriptions live in default.store, session metrics in stats.store. Querying
+# ZSESSIONMETRIC in default.store returns a truthful-looking 0.
+if command -v sqlite3 >/dev/null; then
+  count() { [[ -f "$SUPPORT/$1" ]] && sqlite3 -readonly "$SUPPORT/$1" "select count(*) from $2;" 2>/dev/null || echo 'n/a'; }
+  printf 'transcripts:  %s\n' "$(count default.store ZTRANSCRIPTION)"
+  printf 'sessions:     %s\n' "$(count stats.store ZSESSIONMETRIC)"
+  printf 'recordings:   %s\n' "$(ls -1 "$SUPPORT/Recordings" 2>/dev/null | wc -l | tr -d ' ')"
 fi
 
 cat <<'NEXT'
