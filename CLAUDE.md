@@ -94,10 +94,12 @@ Rules worth not relearning:
   overwrite a hand-copied one from its in-memory cache.
 - Run `lsregister -f` on the new bundle **before** `tccutil reset`, or tccutil fails `-10814`
   because LaunchServices still maps the bundle id to the deleted path.
-- `OnboardingV2Migration.prepareIfNeeded` unconditionally deletes `hasCompletedOnboarding`, so
-  every upgrade re-runs onboarding and `clearModeStorage()` wipes `modeConfigurationsV2`,
-  `powerModeConfigurationsV2`, `activeConfigurationId` and per-mode shortcuts. Export the prefs
-  plist first — the script does.
+- `OnboardingV2Migration.prepareIfNeeded` deletes the *legacy* `hasCompletedOnboarding` key on
+  every launch, but then returns early once `hasCompletedOnboardingV2` is set. So the V2 flow —
+  and the `clearModeStorage()` wipe of `modeConfigurationsV2`, `powerModeConfigurationsV2`,
+  `activeConfigurationId` and the per-mode shortcuts — runs **once**, on the v1.x → v2.x
+  upgrade, not on every rebuild. On a new Mac that once is the first launch. Export the prefs
+  plist beforehand regardless; the script does.
 - `TranscriptionAutoCleanupService` deletes every recording not referenced by a `Transcription`
   row. It is inert only because `IsTranscriptionCleanupEnabled` defaults to false — a bool in
   the plist this upgrade rewrites. That is why `Recordings/` gets cloned, not trusted.

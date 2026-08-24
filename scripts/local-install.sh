@@ -141,8 +141,9 @@ cat <<'NEXT'
      Automation when prompted. If Accessibility or Input Monitoring shows a
      ticked box that still does not work, remove the row with the "-" button and
      re-add it — toggling does not clear the stale cdhash.
-  3. Walk through onboarding. It always re-runs on an upgrade, because
-     OnboardingV2Migration unconditionally clears the completion flag.
+  3. Walk through onboarding if it appears. It runs on a first install and on the
+     v1.x -> v2.x upgrade; later rebuilds skip it once hasCompletedOnboardingV2
+     is set.
   4. Record one dictation. A clean transcript with no "Your trial has ended"
      text appended is the proof the paywall strip holds end to end.
 
