@@ -3,13 +3,14 @@
 Fork of [`Beingpax/VoiceInk`](https://github.com/Beingpax/VoiceInk) (`upstream`) at
 [`maseko-lucky-9/VoiceInk`](https://github.com/maseko-lucky-9/VoiceInk) (`origin`).
 
-**Branch `local/no-paywall` is the one that matters.** It is `upstream/main` plus a single
-10-line commit. Everything else here is upstream, unmodified.
+**`main` and `local/no-paywall` carry the same tree.** `local/no-paywall` is the working
+branch — it tracks `upstream/main` plus a three-file diff, and gets merged into `main` after
+each rebase. Build from either; everything else here is upstream, unmodified.
 
 ## Set up on a new Mac
 
 ```bash
-git clone -b local/no-paywall git@github.com:maseko-lucky-9/VoiceInk.git
+git clone git@github.com:maseko-lucky-9/VoiceInk.git
 cd VoiceInk
 git remote add upstream git@github.com:Beingpax/VoiceInk.git
 ./scripts/local-install.sh
@@ -23,8 +24,13 @@ test dictation; it tells you those at the end.
 First run is slow: it resolves 28 SPM packages, builds `whisper.cpp`, and may download the
 Metal Toolchain (~700 MB). Network is a hard prerequisite. Later runs reuse all of it.
 
-`main` on the fork is stale — 300+ commits behind upstream, carrying an older and much
-larger strip that no longer applies. Do not build from it.
+The script refuses to build if the Sparkle keys are still present, so a checkout that is
+missing the strip fails loudly instead of quietly producing a self-updating app.
+
+To pick up new upstream releases, work on `local/no-paywall` and merge it back into `main`
+(see below) — pushing straight to `main` is blocked. The pre-2.x strip, an 18-file deletion
+against v1.79, is kept as tag `archive/original-strip-v1.79` for reference only; it does not
+apply to v2.x and should not be revived.
 
 ## What the strip actually is
 
@@ -111,10 +117,16 @@ Full uninstall footprint: `~/Library/Application Support/com.prakashjoshipax.Voi
 ## Picking up new upstream releases
 
 ```bash
+git switch local/no-paywall
 git fetch upstream --prune
-git rebase upstream/main       # a 10-line replay, not a merge
+git rebase upstream/main       # a three-file replay, not a merge
+git push --force-with-lease origin local/no-paywall
+gh pr create --base main --head local/no-paywall --fill && gh pr merge --merge
 ./scripts/local-install.sh
 ```
+
+Use a merge commit, never rebase-merge: GitHub's rebase-merge rewrites the SHAs, which
+re-diverges `main` from `local/no-paywall` and breaks the next round.
 
 If the rebase conflicts on `Info.plist`, take upstream's version and re-delete the five `SU*`
 keys by name. Before assuming a license patch is needed again, check that the `#if LOCAL_BUILD`
